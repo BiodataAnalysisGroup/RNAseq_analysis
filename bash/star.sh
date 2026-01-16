@@ -19,7 +19,8 @@ printf "mkdir quality/raw\n"
 printf "mkdir quality/trim\n"
 printf "\n\n"
 
-printf "source activate star_aligner"
+printf "source ~/.bashrc\n"
+printf "conda activate star_aligner"
 printf "\n\n"
 
 cat $SampleList | while read line; do
