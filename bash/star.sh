@@ -1,10 +1,5 @@
 # ls -la /work/natanastas/Merge/20250127 | awk '{print $9}' | awk -F "_L" '{print $1}' | sort | uniq > SampleList
 
-# pathToGenomeRef="/work_1/nikospech/hg38/gencode/star"
-# pathToGenomeAnnotation="/work_1/nikospech/hg38/gencode/gencode.v47.primary_assembly.basic.annotation.gtf"
-# pathToFASTQFiles="/mnt/new_home/kate_mallou/Karolinska_RNASeq/"
-# numberOfThreads=16
-
 pathToFASTQFiles="$1"
 SampleList="$2"
 
@@ -20,7 +15,9 @@ printf "mkdir quality/trim\n"
 printf "\n\n"
 
 printf "source ~/.bashrc\n"
-printf "conda activate star_aligner"
+printf "\n\n"
+
+printf "conda activate fastqc_0.11.9"
 printf "\n\n"
 
 cat $SampleList | while read line; do
@@ -30,12 +27,25 @@ cat $SampleList | while read line; do
 	printf "fastqc \
 	-t $numberOfThreads \
 	$pathToFASTQFiles/$line*R1*.fastq.gz \
-	$pathToFASTQFiles/$line*R2*.fastq.gz \
-	-o ./quality/raw/ \
-	\n"
+ 	$pathToFASTQFiles/$line*R2*.fastq.gz \
+ 	-o ./quality/raw/ \
+ 	\n"
 
-	printf "/home/bio_tmp/HumanNGS/Apps/trim_galore/trim_galore \
-	--path_to_cutadapt /home/bio_tmp/HumanNGS/Apps/cutadapt-1.8.1/bin/cutadapt \
+ 	printf "\n"
+ done;
+
+ printf "conda deactivate"
+ printf "\n\n"
+
+ printf "conda activate trim_galore"
+ printf "\n\n"
+
+ cat $SampleList | while read line; do
+
+	printf "### $line ###\n"
+
+	printf "trim_galore \
+	--path_to_cutadapt /apps/miniconda3/envs/trim_galore/bin/cutadapt \
 	--length 50 \
 	--quality 28 \
 	--fastqc \
@@ -44,6 +54,19 @@ cat $SampleList | while read line; do
 	$pathToFASTQFiles/$line*R2*.fastq.gz \
 	-o ./quality/trim/ \
 	\n"
+
+	printf "\n"
+ done;
+
+printf "conda deactivate"
+printf "\n\n"
+
+printf "conda activate star_aligner"
+printf "\n\n"
+
+cat $SampleList | while read line; do
+
+	printf "### $line ###\n"
 
 	printf "STAR \
 	--genomeDir $pathToGenomeRef \
@@ -54,20 +77,29 @@ cat $SampleList | while read line; do
 	./quality/trim/$line*R2*val_2.fq.gz \
 	--outFileNamePrefix $line. \
 	--outReadsUnmapped Fastx \
-    	\n"
+    \n"
 
 	printf "samtools view     -@ $numberOfThreads -bS $line.Aligned.out.sam -o $line.bam \n"
-	printf "samtools flagstat -@ $numberOfThreads $line.bam > $line.report.txt \n"
-	printf "samtools view 	  -@ $numberOfThreads -b -F 4 $line.bam -o $line.mapped.bam \n"
-	printf "samtools sort     -@ $numberOfThreads $line.mapped.bam -o $line.mapped.sorted.bam \n"
-
-	printf "\n\n"
+	printf "rm $line.Aligned.out.sam\n"
+	printf "\n"
 done;
 
 printf "conda deactivate"
 printf "\n\n"
 
-printf "rm *.sam"
+
+cat $SampleList | while read line; do
+
+	printf "### $line ###\n"
+
+	printf "samtools flagstat -@ $numberOfThreads $line.bam > $line.report.txt \n"
+	printf "samtools view 	  -@ $numberOfThreads -b -F 4 $line.bam -o $line.mapped.bam \n"
+	printf "samtools sort     -@ $numberOfThreads $line.mapped.bam -o $line.mapped.sorted.bam \n"
+
+	printf "\n"
+done;
+
+# printf "rm *.sam"
 printf "\n\n"
 
 printf "/home/bio_tmp/HumanNGS/Apps/subread-1.6.4-Linux-x86_64/bin/featureCounts \
