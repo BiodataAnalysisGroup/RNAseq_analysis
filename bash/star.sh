@@ -17,7 +17,7 @@ printf "\n\n"
 printf "source ~/.bashrc\n"
 printf "\n\n"
 
-printf "conda activate fastqc_0.11.9"
+printf "conda activate fastqc_v0.12.1"
 printf "\n\n"
 
 cat $SampleList | while read line; do
